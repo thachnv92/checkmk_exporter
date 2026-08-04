@@ -4,7 +4,7 @@ import sys
 # Add parent directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from files.exporter import _escape_string, format_prometheus, fetch_checkmk_data
+from files.exporter import _escape_string, format_prometheus, fetch_checkmk_data, load_servers_csv
 from unittest.mock import patch, MagicMock
 
 
@@ -15,7 +15,14 @@ def test_escape_string():
     assert _escape_string(None) == ""
 
 
-def test_format_prometheus():
+def test_format_prometheus_with_servers_csv():
+    csv_path = os.path.join(os.path.dirname(__file__), "..", "servers.csv")
+    servers_map = load_servers_csv(csv_path)
+
+    assert "Server-01" in servers_map
+    assert servers_map["Server-01"]["Type"] == "Database"
+    assert servers_map["Server-01"]["ENV"] == "PROD"
+
     data = [
         [
             "host_state",
@@ -53,22 +60,22 @@ def test_format_prometheus():
         ],
     ]
 
-    output = format_prometheus(data, metric_name="checkmk_status")
+    output = format_prometheus(data, metric_name="checkmk_status", servers_map=servers_map)
 
     assert '# HELP checkmk_status CheckMK host status' in output
     assert '# TYPE checkmk_status gauge' in output
 
-    # Row 1 (UP) -> 1
+    # Row 1 (Server-01 with enriched labels)
     assert (
-        'checkmk_status{host_state="UP",host="Server-01",'
+        'checkmk_status{host_state="UP",host="Server-01",Type="Database",ENV="PROD",Important="YES",Project="Project1",'
         'host_icons_1="themes/facelift/images/icon_host_graph.svg",host_icons_2="downtime",host_icons_3="comment",'
         'num_services_ok="4",num_services_warn="0",num_services_unknown="0",num_services_crit="0",num_services_pending="0"} 1'
         in output
     )
 
-    # Row 2 (DOWN) -> 0
+    # Row 2 (Server-02 with enriched labels)
     assert (
-        'checkmk_status{host_state="DOWN",host="Server-02",'
+        'checkmk_status{host_state="DOWN",host="Server-02",Type="Physical",ENV="UAT",Important="NO",Project="Project2",'
         'num_services_ok="0",num_services_warn="1",num_services_unknown="0",num_services_crit="5",num_services_pending="0"} 0'
         in output
     )

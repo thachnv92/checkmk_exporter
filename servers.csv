@@ -1,0 +1,3 @@
+Hostname,Type,ENV,Important,Project
+Server-01,Database,PROD,YES,Project1
+Server-02,Physical,UAT,NO,Project2

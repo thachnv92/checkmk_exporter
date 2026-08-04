@@ -2,7 +2,7 @@ version: "2.1"
 
 services:
   checkmk_exporter:
-    image: thachnv92/checkmk_exporter:latest
+    image: thachnv92/checkmk_exporter:1.1
     restart: unless-stopped
     net: host
     environment:
@@ -13,6 +13,9 @@ services:
       CHECKMK_VIEW_NAME: "allhosts"
       CHECKMK_SERVER_PORT: "9293"
       CHECKMK_METRIC_NAME: "checkmk_status"
+      SERVERS_CSV_PATH: "/servers.csv"
     ports:
       - "9293:9293"
     read_only: true
+    volumes:
+      - ./servers.csv:/servers.csv:ro
